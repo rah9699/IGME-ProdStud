@@ -154,18 +154,18 @@ public class UIController : MonoBehaviour {
     /// This is temporary to test different scales and positions of the minimap
     /// </summary>
     void Update() {
-        if (Input.GetKeyDown("up")) {
-            //scaleandReposition (); //commented out because we only need to do this once at the beginning.
-        }
-        if (Input.GetKeyDown("b")) {
-            setVisibility(true);
-        }
-        if (Input.GetKeyDown("n")) {
-            setVisibility(false);
-        }
-        if (Input.GetKeyDown("v")) {
-            doMove();
-        }
+        //if (Input.GetKeyDown("up")) {
+        //    //scaleandReposition (); //commented out because we only need to do this once at the beginning.
+        //}
+        //if (Input.GetKeyUp("b")) {
+        //    setVisibility(true);
+        //}
+        //if (Input.GetKeyUp(KeyCode.Escape)) {
+        //    setVisibility(false);
+        //}
+        //if (Input.GetKeyUp("v")) {
+        //    doMove();
+        //}
     }
 
     /// <summary>
