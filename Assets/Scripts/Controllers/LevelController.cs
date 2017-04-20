@@ -89,7 +89,7 @@ public class LevelController : MonoBehaviour {
     /// </summary>
     public void StartMonsterTurn() {
         player.actionPoints = 0;
-        player.playerMoving = false;
+        player.playerActing = false;
         foreach (Monster m in aiController.monsters) {
             m.ResetTurn();
         }
@@ -101,7 +101,7 @@ public class LevelController : MonoBehaviour {
     /// </summary>
     public void StartPlayerTurn() {
         player.actionPoints = 3;
-        player.playerMoving = false;
+        player.playerActing = false;
         this.playerTurn = true;
     }
 

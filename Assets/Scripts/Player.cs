@@ -11,15 +11,15 @@ using UnityEngine.VR;
 /// The player can be an FPS controller or a VR player
 /// </summary>
 public class Player : MonoBehaviour {
-
-	public bool AttatchedToVRPlayer;
     //player coords
     public int q, r, h;
 
     public int[] PlayerCoords {
-        get { int[] temp = { q, r, h }; return temp; }
+        get { return new int[] { q, r, h }; }
     }
 
+    public bool AttatchedToVRPlayer;
+    
     //Materials for hexes being walked over
     public Material currenthexmaterial;
     public Material highlightMaterial;
@@ -28,15 +28,14 @@ public class Player : MonoBehaviour {
     LevelController levelController;
     AIController aiController;
     UIController uiController;
-    InventoryController inventoryController;
 
     //Relevant Gameobjects
     public GameObject playerCamera;
 
     //State variables
-	private bool vrActive = false;
+    private bool vrActive = false;
     public List<List<PathCell>> movable = new List<List<PathCell>>();
-    public bool playerMoving = false;
+    public bool playerActing = false;
     public int actionPoints = 3;
     private bool vrMoveComplete = false;
     public AbilityEnum currentAction = AbilityEnum.NOT_USING_ABILITIES_ATM; //Records the player's current ability state.
@@ -54,7 +53,6 @@ public class Player : MonoBehaviour {
         levelController = GameObject.Find("LevelController").GetComponent<LevelController>();
         aiController = GameObject.Find("AIController").GetComponent<AIController>();
         uiController = GameObject.Find("UIController").GetComponent<UIController>();
-        inventoryController = GameObject.Find("InventoryController").GetComponent<InventoryController>();
 
         //Pass self reference to level controller
         levelController.player = this;
@@ -62,16 +60,16 @@ public class Player : MonoBehaviour {
         playerCamera = GetComponentInChildren<Camera>().gameObject;
 
         //Check for VR
-		if (PlayerSettings.virtualRealitySupported == true){
-			vrActive = true;
-			if (!AttatchedToVRPlayer) {
-				Destroy (this.gameObject);
-			}
+        if (PlayerSettings.virtualRealitySupported == true) {
+            vrActive = true;
+            if (!AttatchedToVRPlayer) {
+                Destroy(this.gameObject);
+            }
         } else {
-			vrActive = false;
-			if (AttatchedToVRPlayer) {
-				Destroy (this.gameObject);
-			}
+            vrActive = false;
+            if (AttatchedToVRPlayer) {
+                Destroy(this.gameObject);
+            }
             //Disable everything VR related and fix FOV of Camera
             SteamVR.SafeDispose();
             VRSettings.enabled = false;
@@ -98,9 +96,9 @@ public class Player : MonoBehaviour {
         }
 
         //If player presses "m" to move, aren't yet moving, and have enough action points to do so
-        if (Input.GetKeyUp("m") && actionPoints > 0 && !playerMoving) {
+        if (Input.GetKeyUp("m") && actionPoints > 0 && !playerActing) {
             //Start movement
-            this.playerMoving = true;
+            this.playerActing = true;
             uiController.setVisibility(true);
         }
     }
@@ -110,8 +108,8 @@ public class Player : MonoBehaviour {
     /// </summary>
     public void onTouchpadUp() {
         //Start movement
-        if (actionPoints > 0 && !playerMoving) {
-            this.playerMoving = true;
+        if (actionPoints > 0 && !playerActing) {
+            this.playerActing = true;
             uiController.setVisibility(true);
         }
     }
@@ -138,7 +136,7 @@ public class Player : MonoBehaviour {
     /// </summary>
     /// <returns>is the player turn over?</returns>
     public bool TakeTurn() {
-        if (playerMoving) {
+        if (playerActing) {
             //Testing the ability selection
             if (Input.GetKey(KeyCode.Alpha1)) {
                 uiController.ClearCells();
@@ -148,9 +146,8 @@ public class Player : MonoBehaviour {
                 MovePlayer();
             }
             //If the player lets go of the left mouse button, act.
-            if (Input.GetMouseButtonUp(0))
-            {
-                playerMoving=!onActionTaken();
+            if (Input.GetMouseButtonUp(0)) {
+                playerActing = !onActionTaken();
             }
         }
         if (actionPoints == 0) {
@@ -160,12 +157,10 @@ public class Player : MonoBehaviour {
     }
 
     //Meant to act as a way to more appropriately implement context-based ability usage.
-    public bool onActionTaken()
-    {
+    public bool onActionTaken() {
         //Call an appropriate ability execution based on the player's current action 
         //Will likely replace that implementation with delegating abilities from the inventory directly?
-        switch (currentAction)
-        {
+        switch (currentAction) {
             //invalid action--if we're on the minimap screen and try to act on an invalid tile...
             case AbilityEnum.INVALID_ACTION: Debug.Log("That's not a valid tile to target."); break;
 
@@ -174,10 +169,9 @@ public class Player : MonoBehaviour {
             case AbilityEnum.MOVE_PLAYER:
                 Debug.Log("Motion is all.");
                 transform.parent.transform.position = levelController[gazedAt.q, gazedAt.r, gazedAt.h].centerPos;
-                if (levelController[gazedAt.q, gazedAt.r, gazedAt.h].hasGoal)
-                {
+                if (levelController[gazedAt.q, gazedAt.r, gazedAt.h].hasGoal) {
                     levelController.numOfGoals -= 1;
-                    levelController[gazedAt.q, gazedAt.r, gazedAt.h].goal.SetActive(false);
+                    levelController[gazedAt.q, gazedAt.r, gazedAt.h].goal.GetComponent<Goal>().Accomplished();
                 }
                 actionPoints -= currentActionCost;
                 uiController.ClearCells();
@@ -187,23 +181,21 @@ public class Player : MonoBehaviour {
             #endregion
 
             //casts an insanely overpowered fireball at a target location.
-            case AbilityEnum.FIREBALL: Debug.Log("BURN STUFF!");
+            case AbilityEnum.FIREBALL:
+                Debug.Log("BURN STUFF!");
                 PathCell targetedCell = aiController[gazedAt.q, gazedAt.r, gazedAt.h];
 
                 //kill any monsters on the cells you target
-                foreach (Monster m in aiController.monsters)
-                {
+                foreach (Monster m in aiController.monsters) {
                     PathCell monsterLoc = aiController.pathGrid[m.CurrentCell[0], m.CurrentCell[1], m.CurrentCell[2]];
-                    if (aiController.DistBetween(targetedCell,monsterLoc)<=1)
-                    {
-                        m.gameObject.GetComponent<MonsterStats>().Health-=9001;
+                    if (aiController.DistBetween(targetedCell, monsterLoc) <= 1) {
+                        m.gameObject.GetComponent<MonsterStats>().Health -= 9001;
                     }
                 }
 
                 //now turn the remaining tiles extra crispy
-                PathCell[] surroundingCells = aiController.pathGrid.GetRadius(gazedAt.q, gazedAt.r, gazedAt.h,1,-1,true);
-                foreach (PathCell cell in surroundingCells)
-                {
+                PathCell[] surroundingCells = aiController.pathGrid.GetRadius(gazedAt.q, gazedAt.r, gazedAt.h, 1, -1, true);
+                foreach (PathCell cell in surroundingCells) {
                     HexCellData cellData = levelController.levelGrid[cell.q, cell.r, cell.h];
                     cellData.hexCellObject.gameObject.GetComponent<Renderer>().material = this.extraCrispyTileMaterial;
                 }
@@ -257,15 +249,11 @@ public class Player : MonoBehaviour {
                     //This is arguably faster than the alternative implementation (getting the distance away as the wolf runs directly
                     //via A*) 
                     #region Check to see if our tile is "on the list" and act accordingly
-                    if (aiController.DistBetween(lookedCell, startCell) <= movable.Count*2)
-                    {
+                    if (aiController.DistBetween(lookedCell, startCell) <= movable.Count * 2) {
                         //loop through all cells we're close enough to reach
-                        for (int i = 0; i < movable.Count; i++)
-                        {
-                            foreach (PathCell m in movable[i])
-                            {
-                                if (lookedCell.Equals(m) && !lookedCell.Equals(startCell))
-                                {
+                        for (int i = 0; i < movable.Count; i++) {
+                            foreach (PathCell m in movable[i]) {
+                                if (lookedCell.Equals(m) && !lookedCell.Equals(startCell)) {
                                     //set the material
                                     hitObj.gameObject.GetComponent<Renderer>().material = highlightMaterial;
 
@@ -382,15 +370,13 @@ public class Player : MonoBehaviour {
             UICellObj hitObj = hit.transform.gameObject.GetComponent<UICellObj>() as UICellObj;
 
             //if it isn't null
-            if (hitObj != null)
-            {
+            if (hitObj != null) {
                 //get the selected cell; if it's within 5 units of the starting cell show the ability AoE
                 PathCell lookedCell = aiController[hitObj.q, hitObj.r, hitObj.h];
                 PathCell startCell = aiController[q, r, h];
 
                 //if this is in the right range to cast this, it's a valid move.
-                if (aiController.DistBetween(lookedCell, startCell) <= 5)
-                {
+                if (aiController.DistBetween(lookedCell, startCell) <= 5) {
                     uiController.ShowValidTopDownRadius(hitObj.q, hitObj.r, hitObj.h, 1, true, TargetingMaterial.TARGETED_ZONE);
                     currentAction = AbilityEnum.FIREBALL;
                     gazedAt = hitObj;
