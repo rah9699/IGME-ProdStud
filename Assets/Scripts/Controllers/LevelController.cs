@@ -199,6 +199,7 @@ public class LevelController : MonoBehaviour
         this.initGoals = true;
     }
 
+<<<<<<< HEAD
     /// <summary>
     /// AddItem is what individual item objects use to inject themselves into the level's information
     /// </summary>
@@ -266,5 +267,10 @@ public class LevelController : MonoBehaviour
     public List<GameObject> GetProps(int q, int r, int h)
     {
         return null;
+=======
+    public void AddDisplayedObject(int q, int r, int h, GameObject uiPrefab) {
+        uiController[q, r, h].forceGoalMaterial = true;
+        this.levelGrid[q, r, h].displayedPrefabs.Add(uiPrefab);
+>>>>>>> danielsbranch/master
     }
 }
